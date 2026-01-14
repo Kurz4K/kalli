@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Letter, UserRole } from './types';
@@ -249,7 +248,7 @@ const App: React.FC = () => {
              </div>
           </div>
 
-          <div className="paper-sheet rounded-sm shadow-2xl p-8 md:p-16 text-center w-full max-lg border-t-[12px] border-[#8b4513] animate-in zoom-in duration-700 relative overflow-hidden">
+          <div className="paper-sheet rounded-sm shadow-2xl p-8 md:p-16 text-center w-full max-w-lg border-t-[12px] border-[#8b4513] animate-in zoom-in duration-700 relative overflow-hidden">
             <div className="auth-corner auth-corner-tl"></div>
             <div className="auth-corner auth-corner-tr"></div>
             <div className="auth-corner auth-corner-bl"></div>
