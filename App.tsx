@@ -24,9 +24,7 @@ const App: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStep, setSaveStep] = useState('');
   const [isDbConnected, setIsDbConnected] = useState<boolean | null>(null);
-  const [lastError, setLastError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  const [showSqlGuide, setShowSqlGuide] = useState(false);
   
   const [showDraftForm, setShowDraftForm] = useState(false);
   const [newLetterTitle, setNewLetterTitle] = useState('');
@@ -66,7 +64,6 @@ const App: React.FC = () => {
 
   const fetchLetters = async () => {
     setIsLoading(true);
-    setLastError(null);
     try {
       const { data, error } = await supabase
         .from('letters')
@@ -76,17 +73,14 @@ const App: React.FC = () => {
       if (error) throw error;
 
       setIsDbConnected(true);
-      if (data && data.length > 0) {
-        setLetters(data as Letter[]);
-      } else {
-        setLetters(INITIAL_LETTERS);
-      }
+      // We only use INITIAL_LETTERS if the fetch completely fails or we want default placeholders
+      // Since the user wants to remove hardcoded files, we set empty if no data.
+      setLetters(data || []);
     } catch (err: any) {
       console.error("Supabase Fetch Error:", err);
       setIsDbConnected(false);
-      setLastError(err.message || "Archive Unreachable");
-      setLetters(INITIAL_LETTERS);
-      showNotification("Archives offline. Using local scrolls.", "error");
+      setLetters(INITIAL_LETTERS); // This is now []
+      showNotification("Archives offline. Local scrolls empty.", "error");
     } finally {
       setTimeout(() => setIsLoading(false), 800);
     }
@@ -154,14 +148,9 @@ const App: React.FC = () => {
       setNewLetterCategory('Romantic');
       setShowDraftForm(false);
       showNotification("Your words are safely archived.", "success");
-      setLastError(null);
     } catch (err: any) {
       console.error("Save Error:", err);
-      setLastError(err.message || "Database failed");
-      showNotification("Save failed. Local recovery active.", "error");
-      
-      const backupKey = `recovery_${Date.now()}`;
-      localStorage.setItem(backupKey, JSON.stringify(letterToSave));
+      showNotification("Save failed. Connection error.", "error");
     } finally {
       setIsSaving(false);
       setSaveStep('');
@@ -170,7 +159,7 @@ const App: React.FC = () => {
 
   const saveReaction = async (id: string) => {
     setIsSaving(true);
-    setSaveStep('Sealing Reflection...');
+    setSaveStep('Sealing Reaction...');
     try {
       const { error } = await supabase
         .from('letters')
@@ -224,7 +213,7 @@ const App: React.FC = () => {
       setShowBurnConfirm(false);
       showNotification("Dispatch struck from archives.", "info");
     } catch (err) {
-      showNotification("Failed to destroy.", "error");
+      showNotification("Failed to destroy manuscript.", "error");
     } finally {
       setIsSaving(false);
       setSaveStep('');
@@ -280,7 +269,7 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-20 relative px-4 pt-10">
       <BackgroundDecor />
 
-      {/* Connection status stickers */}
+      {/* Sync Status Overlay */}
       <div className="fixed top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none">
           <div className={`px-3 py-1 text-[8px] font-bold uppercase tracking-widest rounded shadow-sm border ${isDbConnected ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'} transition-all`}>
             {isDbConnected ? 'Archives Sync: OK' : 'Archives Sync: Offline'}
@@ -305,7 +294,7 @@ const App: React.FC = () => {
         </div>
       )}
       
-      {/* Header */}
+      {/* Newspaper Header */}
       <header className="max-w-5xl mx-auto mb-16 relative z-10 text-[#f2e8cf]">
         <div className="border-b border-[#f2e8cf]/20 pb-8 text-center">
             <div className="flex justify-between items-end mb-4 text-[10px] font-typewriter uppercase tracking-[0.3em] opacity-60">
@@ -319,13 +308,18 @@ const App: React.FC = () => {
             <div className="mt-4 flex justify-center gap-8 items-center text-[9px] uppercase tracking-widest font-bold">
                 <button onClick={handleLogout} className="hover:text-white transition-colors underline underline-offset-4 decoration-[#8b4513]">Lock Desk</button>
                 {isAuthor && (
-                  <button onClick={() => setShowDraftForm(!showDraftForm)} className="bg-[#8b4513] px-4 py-1.5 rounded-sm hover:bg-[#5d2e0a] transition-colors shadow-lg border border-[#5d2e0a]">New Dispatch</button>
+                  <button 
+                    onClick={() => setShowDraftForm(!showDraftForm)} 
+                    className="btn-vintage px-5 py-2 rounded-sm"
+                  >
+                    New Dispatch
+                  </button>
                 )}
             </div>
         </div>
       </header>
 
-      {/* Main Grid */}
+      {/* Main Content Grid */}
       <main className="max-w-6xl mx-auto relative z-10">
         
         {/* Write View */}
@@ -383,11 +377,11 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* List View */}
+        {/* Gallery View */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-start">
           {letters.length === 0 && !isLoading && (
             <div className="col-span-full text-center py-20 text-[#f2e8cf]/40 italic font-typewriter">
-                The archives are currently empty.
+                The archives are currently empty. Awaiting new dispatches...
             </div>
           )}
           {letters.map((letter, index) => {
@@ -435,7 +429,7 @@ const App: React.FC = () => {
           
           <div className="relative w-full max-w-4xl mx-auto my-auto bg-[#fdf5e6] rounded-sm shadow-2xl border-[1px] border-[#d2b48c] paper-sheet flex flex-col z-10 animate-in zoom-in duration-300">
             
-            {/* Modal Header Redesign */}
+            {/* Header with Custom "BURN" Stamp UI */}
             <div className="p-4 md:p-6 border-b border-[#d2b48c]/30 flex justify-between items-center bg-[#fdf5e6]/50">
                 <button 
                   onClick={() => setSelectedLetter(null)} 
@@ -451,26 +445,36 @@ const App: React.FC = () => {
                 {isAuthor && (
                     <button 
                         onClick={() => setShowBurnConfirm(!showBurnConfirm)}
-                        className={`text-[9px] uppercase tracking-widest font-bold px-4 py-2 border border-transparent transition-all ${showBurnConfirm ? 'bg-red-900 text-white shadow-inner' : 'text-red-900/40 hover:text-red-900 hover:border-red-900/20'}`}
+                        className={`text-[10px] uppercase tracking-widest font-bold px-5 py-2 transition-all border-2 border-dashed ${showBurnConfirm ? 'bg-red-900 text-white border-white' : 'text-red-900/60 border-red-900/20 hover:text-red-900 hover:border-red-900/60'}`}
                     >
-                        {showBurnConfirm ? 'WAIT...' : 'BURN'}
+                        {showBurnConfirm ? 'ERASING...' : 'INCINERATE'}
                     </button>
                 )}
             </div>
 
-            {/* Content Container */}
+            {/* Letter Body Container */}
             <div className="p-10 md:p-20 lg:p-24 font-typewriter text-[#3d2b1f] relative min-h-[60vh]">
                 
-                {/* Burn Confirmation Overlay */}
+                {/* Burn Confirmation Layer */}
                 {showBurnConfirm && (
-                   <div className="absolute inset-0 z-50 flex items-center justify-center p-10 text-center bg-[#fdf5e6]/90 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+                   <div className="absolute inset-0 z-[60] flex items-center justify-center p-10 text-center bg-[#fdf5e6]/95 backdrop-blur-md animate-in fade-in zoom-in duration-200">
                       <div className="max-w-sm">
-                         <div className="text-4xl mb-6 grayscale">🔥</div>
-                         <h4 className="font-serif text-2xl text-red-900 uppercase tracking-widest mb-4">Strike from Record?</h4>
-                         <p className="text-xs text-[#3d2b1f]/70 leading-relaxed mb-10 italic">This manuscript will be lost to time. You cannot undo this act of erasure.</p>
-                         <div className="flex gap-4 justify-center">
-                            <button onClick={() => setShowBurnConfirm(false)} className="px-6 py-2 border border-[#d2b48c] text-[10px] uppercase font-bold tracking-widest hover:bg-[#efe6d5] transition-colors">Relent</button>
-                            <button onClick={() => handleDeleteLetter(selectedLetter.id)} className="px-6 py-2 bg-red-900 text-white text-[10px] uppercase font-bold tracking-widest hover:bg-black transition-colors shadow-lg">Incinerate</button>
+                         <div className="text-5xl mb-8 grayscale-0 opacity-100">🔥</div>
+                         <h4 className="font-serif text-3xl text-red-900 font-bold uppercase tracking-widest mb-6">Confirm Erasure?</h4>
+                         <p className="text-sm text-[#3d2b1f]/80 leading-relaxed mb-12 italic">This dispatch will be completely struck from the archives. This act is final.</p>
+                         <div className="flex gap-6 justify-center">
+                            <button 
+                              onClick={() => setShowBurnConfirm(false)} 
+                              className="btn-paper-tab px-8"
+                            >
+                              Relent
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteLetter(selectedLetter.id)} 
+                              className="btn-vintage bg-red-900 px-8 border-red-950 text-white"
+                            >
+                              Burn
+                            </button>
                          </div>
                       </div>
                    </div>
@@ -486,14 +490,14 @@ const App: React.FC = () => {
                         {selectedLetter.content}
                     </div>
 
-                    {/* Signature and Seal */}
+                    {/* Signature and Interactive Wax Seal */}
                     <div className="mt-20 flex flex-col items-end relative">
                         <div className="font-elegant text-5xl text-[#8b4513] mb-4">Always yours,</div>
                         <div className="font-serif font-bold uppercase tracking-[0.5em] text-sm mb-12">Moshi</div>
                         
                         <div 
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(selectedLetter.id, !!selectedLetter.is_favorite); }}
-                          className={`wax-seal select-none hover:scale-110 transition-transform cursor-pointer absolute -bottom-4 right-0 ${selectedLetter.is_favorite ? 'shadow-[0_0_20px_rgba(139,0,0,0.4)] scale-110' : 'opacity-80'}`}
+                          className={`wax-seal select-none hover:scale-110 transition-transform cursor-pointer absolute -bottom-4 right-0 ${selectedLetter.is_favorite ? 'shadow-[0_0_20px_rgba(139,0,0,0.5)] scale-110' : 'opacity-80'}`}
                           style={{ backgroundColor: selectedLetter.is_favorite ? '#8b0000' : '#4d3b2e' }}
                           title={selectedLetter.is_favorite ? "Unpin Memory" : "Pin Memory"}
                         >
@@ -501,7 +505,7 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Reflection Section */}
+                    {/* Reflection Footer */}
                     <div className="mt-32 pt-16 border-t border-[#d2b48c]/50">
                         <h4 className="font-serif text-[11px] font-bold text-[#8b4513] uppercase tracking-[0.4em] mb-8 text-center">A Heart's Reflection</h4>
                         {isRecipient ? (
@@ -533,32 +537,14 @@ const App: React.FC = () => {
                 </div>
             </div>
           </div>
+          {/* Scroll padding */}
           <div className="h-20 w-full shrink-0"></div>
-        </div>
-      )}
-
-      {/* Diagnostic Fix */}
-      {showSqlGuide && isAuthor && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80">
-            <div className="relative bg-white p-8 max-w-xl w-full border-t-8 border-red-800 shadow-2xl rounded-sm">
-               <h3 className="font-serif text-xl font-bold mb-4">Fix Archive Schema</h3>
-               <p className="text-xs mb-4">Run this in your Supabase SQL Editor:</p>
-               <pre className="bg-gray-100 p-4 text-[10px] font-mono rounded overflow-x-auto select-all mb-6">
-{`ALTER TABLE letters ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN DEFAULT false;
-ALTER TABLE letters ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Romantic';
-ALTER TABLE letters ADD COLUMN IF NOT EXISTS reaction TEXT;`}
-               </pre>
-               <div className="flex justify-end gap-4">
-                    <button onClick={() => setShowSqlGuide(false)} className="text-xs font-bold uppercase underline">Close</button>
-                    <button onClick={fetchLetters} className="bg-red-800 text-white px-6 py-2 text-xs font-bold uppercase rounded">Reload</button>
-               </div>
-            </div>
         </div>
       )}
 
       <footer className="mt-32 pt-16 pb-20 text-center opacity-30 text-[#f2e8cf] relative z-10">
         <div className="w-16 h-px bg-current mx-auto mb-4"></div>
-        <p className="font-typewriter uppercase tracking-[0.5em] text-[8px]">Private Collection — № 0143 — EST. JAN 2026</p>
+        <p className="font-typewriter uppercase tracking-[0.5em] text-[8px]">Private Collection — № 0143 — JAN 2026</p>
       </footer>
     </div>
   );
