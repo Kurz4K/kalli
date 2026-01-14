@@ -22,20 +22,22 @@ const BackgroundDecor: React.FC = () => {
       {particles.map((p) => (
         <div
           key={p.id}
-          className="dust-particle opacity-0"
+          className="dust-particle"
           style={{
             left: `${p.left}%`,
             fontSize: `${p.size}px`,
             animationDuration: `${p.duration}s`,
             animationDelay: `${p.delay}s`,
             bottom: '-50px',
+            position: 'fixed',
+            opacity: 0
           }}
         >
           {p.char}
         </div>
       ))}
-      {/* Vignette effect */}
-      <div className="absolute inset-0 bg-radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%) pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]"></div>
+      {/* Fixed Radial Gradient Syntax for Tailwind */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle,_transparent_40%,_rgba(0,0,0,0.6)_100%)] pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]"></div>
     </div>
   );
 };

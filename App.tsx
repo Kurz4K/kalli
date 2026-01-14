@@ -73,13 +73,11 @@ const App: React.FC = () => {
       if (error) throw error;
 
       setIsDbConnected(true);
-      // We only use INITIAL_LETTERS if the fetch completely fails or we want default placeholders
-      // Since the user wants to remove hardcoded files, we set empty if no data.
       setLetters(data || []);
     } catch (err: any) {
       console.error("Supabase Fetch Error:", err);
       setIsDbConnected(false);
-      setLetters(INITIAL_LETTERS); // This is now []
+      setLetters(INITIAL_LETTERS); 
       showNotification("Archives offline. Local scrolls empty.", "error");
     } finally {
       setTimeout(() => setIsLoading(false), 800);
@@ -222,9 +220,9 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-[#f2e8cf]">
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-[#f2e8cf] relative">
          <BackgroundDecor />
-         <div className="z-10">
+         <div className="z-10 relative">
             <div className="w-12 h-12 border-2 border-[#f2e8cf]/20 border-t-[#8b4513] rounded-full animate-spin mb-6 mx-auto"></div>
             <h2 className="font-serif text-xl uppercase tracking-widest opacity-80">Accessing Archives</h2>
             <p className="font-typewriter text-[10px] mt-2 italic opacity-60">Wait for the seals to break...</p>
@@ -238,28 +236,69 @@ const App: React.FC = () => {
 
   if (!userRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
         <BackgroundDecor />
-        <div className="max-w-md w-full paper-sheet rounded shadow-2xl p-10 md:p-12 text-center z-10 border-t-8 border-[#8b4513] animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="text-4xl mb-6 grayscale opacity-60">✒️</div>
-          <h1 className="font-elegant text-5xl text-[#3d2b1f] mb-2">Kalliana</h1>
-          <p className="text-[#8b4513] mb-10 italic font-typewriter text-xs uppercase tracking-widest">A Private Correspondence</p>
-          <div className="space-y-6">
-            <input
-              type="password"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-              placeholder="The Heart's Key..."
-              className="w-full px-4 py-3 bg-[#f2e8cf]/30 rounded-none border-b-2 border-[#d2b48c] focus:outline-none focus:border-[#8b4513] text-center font-typewriter text-base placeholder:opacity-50"
-              onKeyPress={(e) => e.key === 'Enter' && handleUnlock()}
-            />
-            <button
-              onClick={handleUnlock}
-              className="w-full btn-vintage font-bold py-3 uppercase tracking-[0.2em] text-xs shadow-md"
-            >
-              Open Archives
-            </button>
+        <div className="max-w-2xl w-full flex flex-col items-center relative z-20">
+          
+          {/* Header Typography */}
+          <div className="text-center mb-12 animate-in fade-in slide-in-from-top-8 duration-1000">
+             <span className="font-typewriter text-[10px] text-[#f2e8cf]/40 uppercase tracking-[0.6em] block mb-4">Classified Correspondence</span>
+             <h1 className="font-elegant text-8xl text-[#d2b48c] drop-shadow-lg">Kalliana</h1>
+             <div className="flex items-center justify-center gap-4 mt-2">
+                <div className="h-px w-8 bg-[#8b4513]"></div>
+                <span className="font-handwriting text-xl text-[#f2e8cf]/80">A legacy for the Munchie</span>
+                <div className="h-px w-8 bg-[#8b4513]"></div>
+             </div>
           </div>
+
+          {/* The Ledger Case */}
+          <div className="paper-sheet rounded-sm shadow-2xl p-8 md:p-16 text-center w-full max-w-lg border-t-[12px] border-[#8b4513] animate-in zoom-in duration-700 relative overflow-hidden">
+            {/* Decorative Corners */}
+            <div className="auth-corner auth-corner-tl"></div>
+            <div className="auth-corner auth-corner-tr"></div>
+            <div className="auth-corner auth-corner-bl"></div>
+            <div className="auth-corner auth-corner-br"></div>
+
+            <div className="relative z-10">
+              <div className="text-5xl mb-10 opacity-80">🗝️</div>
+              
+              <p className="font-serif text-[#3d2b1f]/60 text-xs italic mb-10 leading-relaxed px-4">
+                "Words left unspoken are merely ink trapped in a bottle.<br/>Unlock the archives to set them free."
+              </p>
+
+              <div className="space-y-8">
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={accessCode}
+                    onChange={(e) => setAccessCode(e.target.value)}
+                    placeholder="Enter the Heart's Key..."
+                    className="w-full px-4 py-4 bg-[#f2e8cf]/40 rounded-none border-b-2 border-[#d2b48c] focus:outline-none focus:border-[#8b4513] text-center font-typewriter text-lg placeholder:opacity-30 placeholder:italic transition-all"
+                    onKeyPress={(e) => e.key === 'Enter' && handleUnlock()}
+                  />
+                  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#8b4513]/20 to-transparent"></div>
+                </div>
+
+                <button
+                  onClick={handleUnlock}
+                  className="w-full btn-vintage font-bold py-4 uppercase tracking-[0.3em] text-[10px] shadow-xl group overflow-hidden relative"
+                >
+                  <span className="relative z-10">Break the Seal</span>
+                  <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                </button>
+              </div>
+
+              <div className="mt-12 pt-8 border-t border-[#d2b48c]/30 flex justify-center gap-6">
+                 <div className="text-[10px] font-bold text-[#8b4513]/40 uppercase tracking-widest">Ink & Parchment</div>
+                 <div className="w-1.5 h-1.5 rounded-full bg-[#8b4513]/20 self-center"></div>
+                 <div className="text-[10px] font-bold text-[#8b4513]/40 uppercase tracking-widest">Est. 2026</div>
+              </div>
+            </div>
+          </div>
+          
+          <p className="mt-10 text-[9px] font-typewriter uppercase tracking-[0.4em] text-[#f2e8cf]/30 animate-pulse">
+            Locked on behalf of Moshi
+          </p>
         </div>
       </div>
     );
@@ -380,7 +419,7 @@ const App: React.FC = () => {
         {/* Gallery View */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-start">
           {letters.length === 0 && !isLoading && (
-            <div className="col-span-full text-center py-20 text-[#f2e8cf]/40 italic font-typewriter">
+            <div className="col-span-full text-center py-20 text-[#f2e8cf]/60 italic font-typewriter bg-black/10 rounded-lg">
                 The archives are currently empty. Awaiting new dispatches...
             </div>
           )}
