@@ -36,8 +36,7 @@ const BackgroundDecor: React.FC = () => {
           {p.char}
         </div>
       ))}
-      {/* Fixed Radial Gradient Syntax for Tailwind */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle,_transparent_40%,_rgba(0,0,0,0.6)_100%)] pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle,_transparent_40%,_rgba(0,0,0,0.4)_100%)] pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.6)]"></div>
     </div>
   );
 };

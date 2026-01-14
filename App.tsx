@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Letter, UserRole } from './types';
@@ -221,7 +222,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-[#f2e8cf] relative bg-[#2c1e14]">
          <BackgroundDecor />
-         <div className="z-10 relative">
+         <div className="z-20 relative">
             <div className="w-12 h-12 border-2 border-[#f2e8cf]/20 border-t-[#8b4513] rounded-full animate-spin mb-6 mx-auto"></div>
             <h2 className="font-serif text-xl uppercase tracking-widest opacity-80">Accessing Archives</h2>
             <p className="font-typewriter text-[10px] mt-2 italic opacity-60">Wait for the seals to break...</p>
@@ -238,8 +239,6 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-[#2c1e14]">
         <BackgroundDecor />
         <div className="max-w-2xl w-full flex flex-col items-center relative z-20">
-          
-          {/* Header Typography */}
           <div className="text-center mb-12 animate-in fade-in slide-in-from-top-8 duration-1000">
              <span className="font-typewriter text-[10px] text-[#f2e8cf]/40 uppercase tracking-[0.6em] block mb-4">Classified Correspondence</span>
              <h1 className="font-elegant text-8xl text-[#d2b48c] drop-shadow-lg">Kalliana</h1>
@@ -250,9 +249,7 @@ const App: React.FC = () => {
              </div>
           </div>
 
-          {/* The Ledger Case */}
-          <div className="paper-sheet rounded-sm shadow-2xl p-8 md:p-16 text-center w-full max-w-lg border-t-[12px] border-[#8b4513] animate-in zoom-in duration-700 relative overflow-hidden">
-            {/* Decorative Corners */}
+          <div className="paper-sheet rounded-sm shadow-2xl p-8 md:p-16 text-center w-full max-lg border-t-[12px] border-[#8b4513] animate-in zoom-in duration-700 relative overflow-hidden">
             <div className="auth-corner auth-corner-tl"></div>
             <div className="auth-corner auth-corner-tr"></div>
             <div className="auth-corner auth-corner-bl"></div>
@@ -260,7 +257,6 @@ const App: React.FC = () => {
 
             <div className="relative z-10">
               <div className="text-5xl mb-10 opacity-80">🗝️</div>
-              
               <p className="font-serif text-[#3d2b1f]/60 text-xs italic mb-10 leading-relaxed px-4">
                 "Words left unspoken are merely ink trapped in a bottle.<br/>Unlock the archives to set them free."
               </p>
@@ -307,7 +303,6 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-20 relative px-4 pt-10">
       <BackgroundDecor />
 
-      {/* Sync Status Overlay */}
       <div className="fixed top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none">
           <div className={`px-3 py-1 text-[8px] font-bold uppercase tracking-widest rounded shadow-sm border ${isDbConnected ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'} transition-all`}>
             {isDbConnected ? 'Archives Sync: OK' : 'Archives Sync: Offline'}
@@ -332,7 +327,6 @@ const App: React.FC = () => {
         </div>
       )}
       
-      {/* Newspaper Header */}
       <header className="max-w-5xl mx-auto mb-16 relative z-10 text-[#f2e8cf]">
         <div className="border-b border-[#f2e8cf]/20 pb-8 text-center">
             <div className="flex justify-between items-end mb-4 text-[10px] font-typewriter uppercase tracking-[0.3em] opacity-60">
@@ -357,10 +351,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content Grid */}
       <main className="max-w-6xl mx-auto relative z-10">
-        
-        {/* Write View */}
         {showDraftForm && isAuthor && (
           <div className="mb-20 animate-in fade-in zoom-in duration-500">
              <div className="paper-sheet p-8 md:p-16 max-w-3xl mx-auto rounded-sm border-t-[12px] border-[#8b4513] shadow-inner">
@@ -415,10 +406,9 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Gallery View */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-start">
           {letters.length === 0 && !isLoading && (
-            <div className="col-span-full text-center py-20 text-[#f2e8cf]/60 italic font-typewriter bg-black/10 rounded-lg">
+            <div className="col-span-full text-center py-24 text-[#f2e8cf] italic font-typewriter bg-black/20 rounded-lg border border-[#f2e8cf]/10">
                 The archives are currently empty. Awaiting new dispatches...
             </div>
           )}
@@ -460,14 +450,11 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Detail View Modal */}
       {selectedLetter && (
         <div className="fixed inset-0 z-[100] bg-[#1a110a]/95 backdrop-blur-md overflow-y-auto overflow-x-hidden flex flex-col p-4 md:p-10 lg:p-16">
           <div className="absolute inset-0 cursor-pointer" onClick={() => setSelectedLetter(null)}></div>
           
           <div className="relative w-full max-w-4xl mx-auto my-auto bg-[#fdf5e6] rounded-sm shadow-2xl border-[1px] border-[#d2b48c] paper-sheet flex flex-col z-10 animate-in zoom-in duration-300">
-            
-            {/* Header with Custom "BURN" Stamp UI */}
             <div className="p-4 md:p-6 border-b border-[#d2b48c]/30 flex justify-between items-center bg-[#fdf5e6]/50">
                 <button 
                   onClick={() => setSelectedLetter(null)} 
@@ -475,11 +462,9 @@ const App: React.FC = () => {
                 >
                     <span className="opacity-70">&larr;</span> TUCK AWAY
                 </button>
-
                 <div className="text-[#8b4513]/30 font-typewriter uppercase text-[9px] tracking-[0.4em] hidden sm:block">
                     {selectedLetter.category} — {selectedLetter.date}
                 </div>
-
                 {isAuthor && (
                     <button 
                         onClick={() => setShowBurnConfirm(!showBurnConfirm)}
@@ -490,10 +475,7 @@ const App: React.FC = () => {
                 )}
             </div>
 
-            {/* Letter Body Container */}
             <div className="p-10 md:p-20 lg:p-24 font-typewriter text-[#3d2b1f] relative min-h-[60vh]">
-                
-                {/* Burn Confirmation Layer */}
                 {showBurnConfirm && (
                    <div className="absolute inset-0 z-[60] flex items-center justify-center p-10 text-center bg-[#fdf5e6]/95 backdrop-blur-md animate-in fade-in zoom-in duration-200">
                       <div className="max-w-sm">
@@ -523,16 +505,12 @@ const App: React.FC = () => {
                         <div className="font-handwriting text-3xl text-[#8b4513] mb-2">Dearest Munchie,</div>
                         <div className="h-px w-20 bg-[#8b4513]/20"></div>
                     </div>
-
                     <div className="text-xl md:text-2xl leading-[1.9] space-y-10 whitespace-pre-wrap">
                         {selectedLetter.content}
                     </div>
-
-                    {/* Signature and Interactive Wax Seal */}
                     <div className="mt-20 flex flex-col items-end relative">
                         <div className="font-elegant text-5xl text-[#8b4513] mb-4">Always yours,</div>
                         <div className="font-serif font-bold uppercase tracking-[0.5em] text-sm mb-12">Moshi</div>
-                        
                         <div 
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(selectedLetter.id, !!selectedLetter.is_favorite); }}
                           className={`wax-seal select-none hover:scale-110 transition-transform cursor-pointer absolute -bottom-4 right-0 ${selectedLetter.is_favorite ? 'shadow-[0_0_20px_rgba(139,0,0,0.5)] scale-110' : 'opacity-80'}`}
@@ -542,8 +520,6 @@ const App: React.FC = () => {
                           <span className="text-xs">{selectedLetter.is_favorite ? '❤' : 'M'}</span>
                         </div>
                     </div>
-
-                    {/* Reflection Footer */}
                     <div className="mt-32 pt-16 border-t border-[#d2b48c]/50">
                         <h4 className="font-serif text-[11px] font-bold text-[#8b4513] uppercase tracking-[0.4em] mb-8 text-center">A Heart's Reflection</h4>
                         {isRecipient ? (
@@ -575,7 +551,6 @@ const App: React.FC = () => {
                 </div>
             </div>
           </div>
-          {/* Scroll padding */}
           <div className="h-20 w-full shrink-0"></div>
         </div>
       )}
