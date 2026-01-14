@@ -21,14 +21,12 @@ const App: React.FC = () => {
   const [accessCode, setAccessCode] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveStep, setSaveStep] = useState('');
-  const [isDbConnected, setIsDbConnected] = useState<boolean | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   
   const [showDraftForm, setShowDraftForm] = useState(false);
   const [newLetterTitle, setNewLetterTitle] = useState('');
   const [newLetterContent, setNewLetterContent] = useState('');
-  const [newLetterCategory, setNewLetterCategory] = useState('Romantic');
+  const [newLetterCategory, setNewLetterCategory] = useState('');
   const [showBurnConfirm, setShowBurnConfirm] = useState(false);
   
   const [currentReaction, setCurrentReaction] = useState('');
@@ -69,12 +67,10 @@ const App: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setIsDbConnected(true);
       setLetters(data || []);
     } catch (err: any) {
-      setIsDbConnected(false);
       setLetters(INITIAL_LETTERS); 
-      showNotification("Archives offline. Local scrolls empty.", "error");
+      showNotification("Archives offline.", "error");
     } finally {
       setTimeout(() => setIsLoading(false), 800);
     }
@@ -91,7 +87,7 @@ const App: React.FC = () => {
       localStorage.setItem('userRole', 'Kurzsantol143');
       showNotification("Welcome, Moshi.", "success");
     } else {
-      showNotification("The key failed to turn.", "error");
+      showNotification("Cipher invalid.", "error");
     }
   };
 
@@ -102,11 +98,10 @@ const App: React.FC = () => {
 
   const saveDraft = async () => {
     if (!newLetterContent.trim() || !newLetterTitle.trim()) {
-      showNotification("Title and content are needed.", "info");
+      showNotification("Details required.", "info");
       return;
     }
     setIsSaving(true);
-    setSaveStep('Applying Wax Seal...');
     const now = new Date();
     const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const letterToSave: Partial<Letter> = {
@@ -115,7 +110,7 @@ const App: React.FC = () => {
       date: formattedDate,
       excerpt: newLetterContent.slice(0, 100).trim() + '...',
       content: newLetterContent,
-      category: newLetterCategory as any || 'Romantic',
+      category: (newLetterCategory.trim() || 'Romantic') as any,
       is_favorite: false
     };
     try {
@@ -124,10 +119,11 @@ const App: React.FC = () => {
       setLetters([letterToSave as Letter, ...letters]);
       setNewLetterContent('');
       setNewLetterTitle('');
+      setNewLetterCategory('');
       setShowDraftForm(false);
-      showNotification("Your words are safely archived.", "success");
+      showNotification("Dispatched.", "success");
     } catch (err: any) {
-      showNotification("Save failed. Connection error.", "error");
+      showNotification("Dispatch failed.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -143,7 +139,7 @@ const App: React.FC = () => {
       if (selectedLetter) setSelectedLetter({ ...selectedLetter, reaction: currentReaction });
       showNotification("Reflection recorded.", "success");
     } catch (err) {
-      showNotification("Failed to save reflection.", "error");
+      showNotification("Failed to save.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -157,7 +153,7 @@ const App: React.FC = () => {
       setLetters(updatedLetters);
       if (selectedLetter && selectedLetter.id === id) setSelectedLetter({ ...selectedLetter, is_favorite: !currentStatus });
     } catch (err) {
-      showNotification("Failed to update status.", "error");
+      showNotification("Failed update.", "error");
     }
   };
 
@@ -168,9 +164,9 @@ const App: React.FC = () => {
       if (error) throw error;
       setLetters(letters.filter(l => l.id !== id));
       setSelectedLetter(null);
-      showNotification("Dispatch struck from archives.", "info");
+      showNotification("Destroyed.", "info");
     } catch (err) {
-      showNotification("Failed to destroy manuscript.", "error");
+      showNotification("Failed erasure.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -178,11 +174,11 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-[#f2e8cf] relative bg-[#2c1e14]">
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#2c1e14]">
          <BackgroundDecor />
-         <div className="z-20 relative animate-pulse">
+         <div className="z-20 relative animate-pulse flex flex-col items-center">
             <div className="text-4xl mb-4">🖋️</div>
-            <h2 className="font-serif text-xl uppercase tracking-widest opacity-80">Opening Archives</h2>
+            <h2 className="font-serif text-xl uppercase tracking-widest text-[#f2e8cf]/60">Accessing Archives</h2>
          </div>
       </div>
     );
@@ -193,29 +189,28 @@ const App: React.FC = () => {
 
   if (!userRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-[#2c1e14]">
+      <div className="min-h-screen flex items-center justify-center p-6 relative bg-[#2c1e14]">
         <BackgroundDecor />
-        <div className="max-w-2xl w-full flex flex-col items-center relative z-20">
-          <div className="text-center mb-12">
-             <span className="font-typewriter text-[10px] text-[#f2e8cf]/40 uppercase tracking-[0.6em] block mb-4">Classified Correspondence</span>
-             <h1 className="font-elegant text-8xl text-[#d2b48c] drop-shadow-lg">Kalliana</h1>
+        <div className="max-w-lg w-full relative z-20 text-center">
+          <div className="mb-16">
+             <h1 className="font-elegant text-8xl md:text-9xl text-[#d2b48c] drop-shadow-2xl">Kalliana</h1>
+             <p className="font-handwriting text-2xl text-[#f2e8cf]/60 mt-4 italic">Memories archived in ink...</p>
           </div>
-
-          <div className="paper-sheet rounded-sm shadow-2xl p-8 md:p-16 text-center w-full max-w-lg border-t-[12px] border-[#8b4513] animate-in zoom-in duration-700">
-            <div className="relative z-10">
-              <div className="text-5xl mb-10 opacity-80">🗝️</div>
-              <div className="space-y-8">
-                <input
-                  type="password"
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  placeholder="The Heart's Key..."
-                  className="w-full px-4 py-4 bg-[#f2e8cf]/40 rounded-none border-b-2 border-[#d2b48c] focus:outline-none focus:border-[#8b4513] text-center font-typewriter text-lg"
-                  onKeyPress={(e) => e.key === 'Enter' && handleUnlock()}
-                />
-                <button onClick={handleUnlock} className="w-full btn-vintage font-bold py-4 uppercase tracking-[0.3em] text-[10px]">Break the Seal</button>
-              </div>
-            </div>
+          <div className="paper-sheet p-10 md:p-16 border-t-[8px] border-[#8b4513] shadow-2xl">
+             <div className="mb-10 flex justify-center">
+                <div className="w-16 h-16 bg-[#8b0000] rounded-full flex items-center justify-center text-white shadow-xl animate-pulse">❤</div>
+             </div>
+             <input
+                type="password"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                placeholder="The Cipher..."
+                className="w-full px-4 py-4 bg-transparent border-b-2 border-[#d2b48c]/40 focus:outline-none focus:border-[#8b4513] text-center font-typewriter text-xl mb-10 text-[#3d2b1f]"
+                onKeyPress={(e) => e.key === 'Enter' && handleUnlock()}
+             />
+             <button onClick={handleUnlock} className="w-full btn-vintage font-bold py-4 uppercase tracking-[0.4em] text-[10px]">
+                Unseal Archives
+             </button>
           </div>
         </div>
       </div>
@@ -227,190 +222,204 @@ const App: React.FC = () => {
       <BackgroundDecor />
 
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-4">
-          <div className="px-6 py-3 rounded-full shadow-2xl bg-white border-2 border-[#8b4513] text-[#8b4513] font-typewriter text-xs uppercase tracking-widest">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] animate-in fade-in slide-in-from-top-4">
+          <div className="px-6 py-3 rounded-full shadow-2xl bg-white border-2 border-[#8b4513] text-[#8b4513] font-typewriter text-[10px] uppercase tracking-widest font-bold">
              {toast.message}
           </div>
         </div>
       )}
       
-      <header className="max-w-5xl mx-auto mb-16 relative z-10 text-[#f2e8cf]">
+      <header className="max-w-6xl mx-auto mb-16 relative z-10 text-[#f2e8cf]">
         <div className="border-b border-[#f2e8cf]/20 pb-8 text-center">
             <h1 className="font-serif text-5xl md:text-8xl font-bold uppercase tracking-tighter mb-4">The Archives</h1>
-            <div className="flex justify-center gap-8 items-center text-[9px] uppercase tracking-widest font-bold">
-                <button onClick={handleLogout} className="underline underline-offset-4 decoration-[#8b4513]">Lock Desk</button>
-                {isAuthor && <button onClick={() => setShowDraftForm(!showDraftForm)} className="btn-vintage px-5 py-2 rounded-sm">New Dispatch</button>}
+            <div className="flex justify-center gap-8 items-center text-[9px] uppercase tracking-widest font-bold opacity-60">
+                <button onClick={handleLogout} className="hover:text-white transition-colors underline underline-offset-4">Lock Desk</button>
+                {isAuthor && <button onClick={() => setShowDraftForm(!showDraftForm)} className="btn-vintage px-5 py-2">New Dispatch</button>}
             </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto relative z-10">
+      <main className="max-w-7xl mx-auto relative z-10">
         {showDraftForm && isAuthor && (
-          <div className="mb-20 animate-in fade-in zoom-in">
-             <div className="paper-sheet p-8 md:p-16 max-w-3xl mx-auto border-t-[12px] border-[#8b4513]">
-                <input
-                  type="text"
-                  value={newLetterTitle}
-                  onChange={(e) => setNewLetterTitle(e.target.value)}
-                  className="w-full bg-transparent border-b border-[#d2b48c] py-2 mb-6 focus:outline-none font-serif text-2xl"
-                  placeholder="Subject..."
-                />
-                <textarea
-                  value={newLetterContent}
-                  onChange={(e) => setNewLetterContent(e.target.value)}
-                  className="w-full h-80 bg-transparent focus:outline-none font-typewriter text-lg resize-none mb-10"
-                  placeholder="Dearest Kalliana..."
-                />
+          <div className="mb-24 animate-in fade-in zoom-in">
+             <div className="paper-sheet p-8 md:p-16 max-w-4xl mx-auto border-t-[12px] border-[#8b4513] shadow-2xl">
+                <div className="flex flex-col md:flex-row gap-6 mb-8">
+                  <div className="flex-[2]">
+                    <label className="block text-[10px] uppercase tracking-widest font-bold text-[#8b4513]/60 mb-1 font-typewriter">Subject</label>
+                    <input
+                      type="text" value={newLetterTitle} onChange={(e) => setNewLetterTitle(e.target.value)}
+                      className="w-full bg-transparent border-b border-[#d2b48c] py-2 focus:outline-none font-serif text-2xl text-[#3d2b1f]" placeholder="Title your memory..."
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] uppercase tracking-widest font-bold text-[#8b4513]/60 mb-1 font-typewriter">Category</label>
+                    <input
+                      type="text" value={newLetterCategory} onChange={(e) => setNewLetterCategory(e.target.value)}
+                      className="w-full bg-transparent border-b border-[#d2b48c] py-2 focus:outline-none font-typewriter text-sm text-[#3d2b1f]" placeholder="Secret, Memory..."
+                    />
+                  </div>
+                </div>
+                <div className="mb-10">
+                  <textarea
+                    value={newLetterContent} onChange={(e) => setNewLetterContent(e.target.value)}
+                    className="w-full h-96 bg-transparent focus:outline-none font-typewriter text-lg resize-none leading-relaxed text-[#3d2b1f]" placeholder="Dearest Kalliana..."
+                  />
+                </div>
                 <div className="flex justify-between items-center">
                   <div className="font-handwriting text-2xl text-[#8b4513]">Moshi</div>
-                  <button onClick={saveDraft} className="btn-vintage px-10 py-3 text-xs uppercase tracking-widest">Seal Dispatch</button>
+                  <div className="flex gap-4">
+                    <button onClick={() => setShowDraftForm(false)} className="text-[10px] font-bold uppercase tracking-widest text-[#8b4513]/60">Discard</button>
+                    <button onClick={saveDraft} disabled={isSaving} className="btn-vintage px-10 py-3 text-xs uppercase tracking-widest">Seal Dispatch</button>
+                  </div>
                 </div>
              </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12 px-4">
           {letters.map((letter, index) => (
             <div
               key={letter.id}
               onClick={() => { setSelectedLetter(letter); setCurrentReaction(letter.reaction || ''); }}
-              className="paper-sheet p-8 cursor-pointer hover:-translate-y-2 transition-all duration-300 group"
-              style={{ transform: `rotate(${(index % 2 === 0 ? 1 : -1) * 0.5}deg)` }}
+              className={`paper-sheet p-8 pt-12 cursor-pointer ${index % 2 === 0 ? 'paper-texture-2' : 'paper-texture-3'}`}
+              style={{ transform: `rotate(${(index % 3 === 0 ? 2 : index % 3 === 1 ? -2 : 1) * (Math.random() + 0.5)}deg)` }}
             >
-              <div className="flex justify-between items-start mb-4 opacity-60">
-                <span className="text-[8px] font-bold uppercase tracking-widest">{letter.category || 'Romantic'}</span>
-                <span className="text-[9px] font-typewriter italic">{letter.date}</span>
+              <div className="archive-stamp absolute top-4 right-4 scale-75 opacity-40">
+                № {143 + index}<br/>Archive
               </div>
-              <h3 className="font-serif text-xl font-bold text-[#3d2b1f] mb-3 uppercase">{letter.title}</h3>
-              <p className="text-[#3d2b1f]/70 text-[13px] font-typewriter line-clamp-3 italic mb-4">{letter.excerpt}</p>
-              <div className="flex justify-between items-center opacity-40">
-                  <span className="font-elegant text-xl">Moshi</span>
-                  {letter.is_favorite && <span>📌</span>}
+              <div className="font-typewriter text-[9px] uppercase tracking-widest text-[#8b4513]/60 mb-4">{letter.category || 'ROMANTIC'}</div>
+              <h3 className="font-serif text-xl font-bold text-[#3d2b1f] uppercase mb-4 line-clamp-2 leading-tight">{letter.title}</h3>
+              <p className="text-[#3d2b1f]/80 text-sm font-typewriter line-clamp-4 italic mb-8 leading-relaxed">{letter.excerpt}</p>
+              <div className="flex justify-between items-end mt-auto">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-typewriter opacity-40 uppercase tracking-widest">{letter.date}</span>
+                  <span className="font-elegant text-2xl text-[#8b4513] mt-1">Moshi</span>
+                </div>
+                {letter.is_favorite && <div className="text-[#8b0000]">❤</div>}
               </div>
             </div>
           ))}
         </div>
       </main>
 
-      {/* DETAILED LETTER VIEW */}
+      {/* MANUSCRIPT VIEW (EXACTLY LIKE SCREENSHOT) */}
       {selectedLetter && (
-        <div className="fixed inset-0 z-[150] flex flex-col bg-[#1a110a]/98 backdrop-blur-xl overflow-y-auto animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[250] bg-[#1a110a] overflow-y-auto pt-6 pb-20 animate-in fade-in duration-500">
           
-          {/* Overlay Controls */}
-          <div className="sticky top-0 z-[160] w-full p-4 flex justify-between items-center bg-gradient-to-b from-[#1a110a] to-transparent pointer-events-none">
+          {/* Header Controls */}
+          <div className="sticky top-4 w-full px-6 flex justify-between items-center z-[260] mb-12">
             <button 
               onClick={() => setSelectedLetter(null)} 
-              className="pointer-events-auto bg-[#fdf5e6] text-[#8b4513] px-6 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase shadow-2xl border border-[#d2b48c] hover:scale-105 transition-transform"
+              className="pill-btn-back shadow-lg active:scale-95 transition-transform"
             >
-              &larr; Return to Archives
+              &larr; Return to archives
             </button>
-            
-            {isAuthor && !showBurnConfirm && (
+            {isAuthor && (
               <button 
                 onClick={() => setShowBurnConfirm(true)}
-                className="pointer-events-auto bg-red-900/20 text-red-500 px-6 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase border border-red-900/50 hover:bg-red-900 hover:text-white transition-all"
+                className="pill-btn-burn shadow-lg active:scale-95 transition-transform"
               >
-                Burn Correspondence
+                Burn<br/>Correspondence
               </button>
             )}
           </div>
 
-          {/* THE PHYSICAL LETTER */}
-          <div className="w-full max-w-4xl mx-auto px-4 py-12 md:py-24 relative z-[155]">
-            <div className="torn-edge bg-[#fdf5e6] min-h-screen relative p-8 md:p-20 lg:p-32 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] animate-in zoom-in slide-in-from-bottom-12 duration-700">
-              
-              {/* Stationary Decoration */}
-              <div className="absolute top-8 right-8 md:top-16 md:right-16 postage-stamp">
-                 <span>Official</span>
-                 <div className="my-1 border-y border-[#8b4513]/20 w-full py-1 text-center font-serif italic">Archive</div>
-                 <div className="text-[6px] opacity-40 uppercase">Post No. 143</div>
-              </div>
-
-              {/* Letter Metadata */}
-              <div className="mb-16 md:mb-24">
-                <div className="font-handwriting text-xl text-[#8b4513]/60 mb-1">Sent from the heart</div>
-                <div className="font-typewriter text-xs uppercase tracking-[0.4em] text-[#8b4513] opacity-80 border-b border-[#d2b48c]/30 inline-block pb-1">
-                  {selectedLetter.date}
-                </div>
-              </div>
-
-              {/* Letter Content */}
-              <div className="max-w-2xl mx-auto relative">
-                
-                {/* Handwritten Annotation in Margin (Desktop) */}
-                <div className="hidden lg:block absolute -left-48 top-20 w-40 font-handwriting text-[#8b4513]/40 text-sm -rotate-6 leading-relaxed">
-                   "Read this whenever you feel far away..."
-                </div>
-
-                <div className="font-handwriting text-3xl md:text-4xl text-[#3d2b1f] mb-12">Dearest Munchie,</div>
-                
-                <div className="drop-cap font-typewriter text-lg md:text-2xl leading-[2] md:leading-[2.4] text-[#3d2b1f] whitespace-pre-wrap">
-                  {selectedLetter.content}
-                </div>
-
-                <div className="mt-24 md:mt-32 flex flex-col items-end">
-                  <div className="font-elegant text-5xl md:text-7xl text-[#8b4513] mb-4">Forever yours,</div>
-                  <div className="font-handwriting text-3xl md:text-4xl text-[#3d2b1f]">Moshi</div>
-                  
-                  {/* Interactive Wax Seal */}
-                  <div 
-                    onClick={() => toggleFavorite(selectedLetter.id, !!selectedLetter.is_favorite)}
-                    className={`wax-seal mt-8 scale-125 transition-all duration-500 hover:scale-150 ${selectedLetter.is_favorite ? 'shadow-[0_0_20px_rgba(139,0,0,0.4)]' : 'grayscale-[0.4] opacity-80'}`}
-                  >
-                    <span className="text-sm">{selectedLetter.is_favorite ? '❤' : 'M'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reflection Section */}
-              <div className="mt-32 md:mt-48 pt-20 border-t border-[#d2b48c]/40 text-center">
-                <h4 className="font-serif italic text-[#8b4513] mb-8 text-xl">A Reflection for the Archives</h4>
-                {isRecipient ? (
-                  <div className="max-w-xl mx-auto">
-                    <textarea
-                      value={currentReaction}
-                      onChange={(e) => setCurrentReaction(e.target.value)}
-                      className="w-full bg-transparent border-none focus:outline-none h-32 italic text-lg font-handwriting text-center placeholder:opacity-20"
-                      placeholder="Write your heartbeat here..."
-                    />
-                    <button 
-                      onClick={() => saveReaction(selectedLetter.id)}
-                      className="mt-6 btn-vintage px-12 py-3 text-[10px] uppercase tracking-[0.3em] font-bold"
-                    >
-                      {isSaving ? 'Sealing...' : 'Seal Reflection'}
-                    </button>
-                  </div>
-                ) : (
-                  <p className="font-handwriting text-2xl text-[#3d2b1f]/60 max-w-xl mx-auto italic leading-relaxed">
-                    {selectedLetter.reaction ? `"${selectedLetter.reaction}"` : "The archive awaits a heartbeat..."}
-                  </p>
-                )}
+          {/* The Manuscript */}
+          <div className="manuscript-parchment animate-in zoom-in duration-700">
+            {/* Stamp from screenshot */}
+            <div className="absolute top-12 right-12">
+              <div className="archive-stamp">
+                 OFFICIAL<br/>
+                 <div className="border-y border-dashed border-[#8b4513]/20 my-1 py-1 px-4">ARCHIVE</div>
+                 POST NO. 143
               </div>
             </div>
 
-            {/* Burn Confirmation Overlay */}
-            {showBurnConfirm && (
-              <div className="fixed inset-0 z-[170] bg-[#1a110a]/95 backdrop-blur-2xl flex items-center justify-center p-8 animate-in fade-in zoom-in duration-300">
-                <div className="text-center max-w-md">
-                  <div className="text-6xl mb-8 animate-pulse">🔥</div>
-                  <h3 className="font-serif text-3xl text-red-500 font-bold uppercase mb-4">Final Erasure</h3>
-                  <p className="text-[#f2e8cf]/60 font-typewriter italic mb-12">Burning this manuscript will remove it from the archives forever. Are you certain?</p>
-                  <div className="flex gap-6 justify-center">
-                    <button onClick={() => setShowBurnConfirm(false)} className="px-10 py-3 bg-[#f2e8cf]/10 text-[#f2e8cf] rounded-full uppercase text-[10px] tracking-widest font-bold">Relent</button>
-                    <button onClick={() => handleDeleteLetter(selectedLetter.id)} className="px-10 py-3 bg-red-600 text-white rounded-full uppercase text-[10px] tracking-widest font-bold shadow-2xl">Confirm Burn</button>
+            <div className="relative z-10">
+              {/* Header text from screenshot */}
+              <div className="mb-20">
+                <div className="font-handwriting text-4xl text-[#8b4513]/60 mb-2 italic">
+                  Sent from the heart
+                </div>
+                <div className="font-typewriter text-xs uppercase tracking-[0.4em] text-[#8b4513]/40 border-b border-[#8b4513]/10 pb-2 inline-block">
+                  {selectedLetter.date.toUpperCase()}
+                </div>
+              </div>
+
+              {/* Salutation from screenshot */}
+              <div className="font-handwriting text-5xl text-[#3d2b1f] mb-16 leading-tight ink-bleed">
+                Dearest Munchie,
+              </div>
+
+              {/* Content with screenshot's drop-cap style */}
+              <div className="manuscript-content illuminated-drop-cap font-typewriter text-xl md:text-2xl leading-[2.5] text-[#3d2b1f] whitespace-pre-wrap ink-bleed">
+                {selectedLetter.content}
+              </div>
+
+              {/* Signature block from screenshot */}
+              <div className="mt-32 flex flex-col items-end mr-4">
+                <div className="font-handwriting text-4xl text-[#8b4513] italic -rotate-2">
+                  Forever yours,
+                </div>
+                <div className="font-handwriting text-5xl text-[#3d2b1f] mt-4 mr-8 ink-bleed">
+                  Moshi
+                </div>
+                <div className="mt-8 opacity-20 font-typewriter text-sm tracking-widest mr-4">M</div>
+                
+                {/* Heart interaction */}
+                <div 
+                  onClick={() => toggleFavorite(selectedLetter.id, !!selectedLetter.is_favorite)}
+                  className={`mt-16 w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-500 hover:scale-110 shadow-2xl relative
+                    ${selectedLetter.is_favorite ? 'bg-[#8b0000] text-white' : 'bg-[#3d2b1f]/20 text-[#3d2b1f]/40 grayscale'}`}
+                >
+                  <span className="text-xl">❤</span>
+                  <div className="absolute -top-10 text-[8px] uppercase tracking-widest font-bold text-[#8b4513] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    {selectedLetter.is_favorite ? 'Bound in Heart' : 'Press Heart'}
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* Reflection section (Styled like the bottom divider in screenshot) */}
+              <div className="mt-48 pt-20 border-t border-[#d2b48c]/30 text-center relative">
+                <p className="font-handwriting text-xl text-[#8b4513]/40 mb-10 italic">A heart's reflection...</p>
+                {isRecipient ? (
+                  <div className="max-w-xl mx-auto">
+                    <textarea 
+                      value={currentReaction} onChange={(e) => setCurrentReaction(e.target.value)}
+                      className="w-full bg-transparent border-none focus:outline-none h-40 italic font-handwriting text-3xl text-center text-[#3d2b1f] placeholder:opacity-20 leading-relaxed"
+                      placeholder="Write your heartbeat..."
+                    />
+                    <button onClick={() => saveReaction(selectedLetter.id)} className="mt-8 pill-btn-back px-12 py-3">
+                      Seal Reflection
+                    </button>
+                  </div>
+                ) : (
+                  <div className="max-w-2xl mx-auto font-handwriting text-4xl text-[#3d2b1f]/60 italic leading-relaxed py-8">
+                    {selectedLetter.reaction ? `"${selectedLetter.reaction}"` : "The archive is silent, waiting for your reflection..."}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          
-          {/* Scroll Bottom Spacing */}
-          <div className="h-24 w-full flex-shrink-0"></div>
         </div>
       )}
 
-      <footer className="mt-32 pb-20 text-center opacity-30 text-[#f2e8cf]">
-        <p className="font-typewriter uppercase tracking-[0.5em] text-[8px]">Private Collection — JAN 2026</p>
+      {showBurnConfirm && (
+        <div className="fixed inset-0 z-[400] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-8 animate-in fade-in zoom-in duration-300">
+          <div className="text-center max-w-sm">
+            <div className="text-7xl mb-8 animate-pulse">🔥</div>
+            <h3 className="font-serif text-3xl text-red-600 font-bold uppercase mb-4">Final Erasure</h3>
+            <p className="text-[#f2e8cf]/60 font-typewriter italic mb-12">Burning this manuscript will remove it from the archives forever. Are you certain?</p>
+            <div className="flex gap-4 justify-center">
+              <button onClick={() => setShowBurnConfirm(false)} className="pill-btn-back px-8 py-3 bg-white/10 text-white border-white/20">Relent</button>
+              <button onClick={() => handleDeleteLetter(selectedLetter?.id || '')} className="pill-btn-burn px-8 py-3 shadow-[0_0_30px_rgba(220,38,38,0.3)]">Confirm Burn</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <footer className="mt-32 pb-20 text-center opacity-20 text-[#f2e8cf]">
+        <p className="font-typewriter uppercase tracking-[0.5em] text-[8px]">Private Correspondence Archives — MOSHI & KALLIANA</p>
       </footer>
     </div>
   );
