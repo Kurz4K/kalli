@@ -1,10 +1,9 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Letter, UserRole } from './types';
 import { INITIAL_LETTERS } from './constants';
 import BackgroundDecor from './components/BackgroundDecor';
-import AIAssistant from './components/AIAssistant';
 
 // Supabase Configuration
 const SUPABASE_URL = 'https://cvsydgnfndwpivipbkce.supabase.co';
@@ -32,12 +31,25 @@ const App: React.FC = () => {
   const [showDraftForm, setShowDraftForm] = useState(false);
   const [newLetterTitle, setNewLetterTitle] = useState('');
   const [newLetterContent, setNewLetterContent] = useState('');
+  const [newLetterCategory, setNewLetterCategory] = useState('Romantic');
+  const [showBurnConfirm, setShowBurnConfirm] = useState(false);
   
   const [currentReaction, setCurrentReaction] = useState('');
 
+  // Handle body scroll locking
+  useEffect(() => {
+    if (selectedLetter) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+      setShowBurnConfirm(false);
+    }
+    return () => document.body.classList.remove('overflow-hidden');
+  }, [selectedLetter]);
+
   useEffect(() => {
     if (toast) {
-      const timer = setTimeout(() => setToast(null), 6000);
+      const timer = setTimeout(() => setToast(null), 5000);
       return () => clearTimeout(timer);
     }
   }, [toast]);
@@ -74,7 +86,7 @@ const App: React.FC = () => {
       setIsDbConnected(false);
       setLastError(err.message || "Archive Unreachable");
       setLetters(INITIAL_LETTERS);
-      showNotification("Could not sync with Cloud Archive.", "error");
+      showNotification("Archives offline. Using local scrolls.", "error");
     } finally {
       setTimeout(() => setIsLoading(false), 800);
     }
@@ -89,9 +101,9 @@ const App: React.FC = () => {
     } else if (code === 'Kurzsantol143') {
       setUserRole('Kurzsantol143');
       localStorage.setItem('userRole', 'Kurzsantol143');
-      showNotification("Ready to write, Moshi.", "success");
+      showNotification("Welcome, Moshi.", "success");
     } else {
-      showNotification("The key does not turn.", "error");
+      showNotification("The key failed to turn.", "error");
     }
   };
 
@@ -100,55 +112,55 @@ const App: React.FC = () => {
     setUserRole(null);
   };
 
-  const handleSuggest = (text: string) => {
-    setNewLetterContent(text);
-    setNewLetterTitle('A Spontaneous Dispatch');
-    setShowDraftForm(true);
-    showNotification("A draft has been prepared.", "info");
-  };
-
   const saveDraft = async () => {
     if (!newLetterContent.trim() || !newLetterTitle.trim()) {
-      showNotification("Title and message required.", "info");
+      showNotification("Title and content are needed.", "info");
       return;
     }
 
     setIsSaving(true);
     setSaveStep('Applying Wax Seal...');
     
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+
     const letterToSave: Partial<Letter> = {
       id: Date.now().toString(),
       title: newLetterTitle,
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      excerpt: newLetterContent.slice(0, 80) + '...',
+      date: formattedDate,
+      excerpt: newLetterContent.slice(0, 100).trim() + '...',
       content: newLetterContent,
-      category: 'Romantic',
+      category: newLetterCategory as any || 'Romantic',
       is_favorite: false
     };
 
     try {
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 1000));
       setSaveStep('Drying Ink...');
       
       const { error } = await supabase.from('letters').insert([letterToSave]);
       if (error) throw error;
       
       setSaveStep('Archiving...');
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 500));
 
       setLetters([letterToSave as Letter, ...letters]);
       setNewLetterContent('');
       setNewLetterTitle('');
+      setNewLetterCategory('Romantic');
       setShowDraftForm(false);
-      showNotification("Memory safely archived.", "success");
+      showNotification("Your words are safely archived.", "success");
       setLastError(null);
     } catch (err: any) {
       console.error("Save Error:", err);
-      setLastError(err.message || "Database insert failed");
-      showNotification("The ink bled. Could not save to cloud.", "error");
+      setLastError(err.message || "Database failed");
+      showNotification("Save failed. Local recovery active.", "error");
       
-      // Local recovery option
-      const backupKey = `backup_letter_${Date.now()}`;
+      const backupKey = `recovery_${Date.now()}`;
       localStorage.setItem(backupKey, JSON.stringify(letterToSave));
     } finally {
       setIsSaving(false);
@@ -158,7 +170,7 @@ const App: React.FC = () => {
 
   const saveReaction = async (id: string) => {
     setIsSaving(true);
-    setSaveStep('Sealing Reaction...');
+    setSaveStep('Sealing Reflection...');
     try {
       const { error } = await supabase
         .from('letters')
@@ -173,9 +185,9 @@ const App: React.FC = () => {
         setSelectedLetter({ ...selectedLetter, reaction: currentReaction });
       }
       setCurrentReaction('');
-      showNotification("Reflection sealed.", "success");
+      showNotification("Reflection recorded.", "success");
     } catch (err) {
-      showNotification("Reaction could not be saved.", "error");
+      showNotification("Failed to save reflection.", "error");
     } finally {
       setIsSaving(false);
       setSaveStep('');
@@ -197,22 +209,22 @@ const App: React.FC = () => {
         setSelectedLetter({ ...selectedLetter, is_favorite: !currentStatus });
       }
     } catch (err) {
-      showNotification("Could not update favorite status.", "error");
+      showNotification("Failed to update status.", "error");
     }
   };
 
   const handleDeleteLetter = async (id: string) => {
-    if (!window.confirm("Strike this memory from the record?")) return;
     setIsSaving(true);
-    setSaveStep('Striking...');
+    setSaveStep('Burning...');
     try {
       const { error } = await supabase.from('letters').delete().eq('id', id);
       if (error) throw error;
       setLetters(letters.filter(l => l.id !== id));
       setSelectedLetter(null);
-      showNotification("Manuscript removed.", "info");
+      setShowBurnConfirm(false);
+      showNotification("Dispatch struck from archives.", "info");
     } catch (err) {
-      showNotification("Could not remove manuscript.", "error");
+      showNotification("Failed to destroy.", "error");
     } finally {
       setIsSaving(false);
       setSaveStep('');
@@ -221,12 +233,12 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f2e8cf] flex flex-col items-center justify-center p-8 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-[#f2e8cf]">
          <BackgroundDecor />
          <div className="z-10">
-            <div className="w-16 h-16 border-4 border-[#8b4513] border-t-transparent rounded-full animate-spin mb-8 mx-auto"></div>
-            <h2 className="font-serif text-2xl text-[#3d2b1f] uppercase tracking-widest mb-4">Opening Archives</h2>
-            <p className="font-typewriter text-xs text-[#8b4513] italic animate-pulse">Syncing with Cloud...</p>
+            <div className="w-12 h-12 border-2 border-[#f2e8cf]/20 border-t-[#8b4513] rounded-full animate-spin mb-6 mx-auto"></div>
+            <h2 className="font-serif text-xl uppercase tracking-widest opacity-80">Accessing Archives</h2>
+            <p className="font-typewriter text-[10px] mt-2 italic opacity-60">Wait for the seals to break...</p>
          </div>
       </div>
     );
@@ -239,25 +251,24 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
         <BackgroundDecor />
-        <div className="max-w-md w-full bg-[#fdf5e6] rounded-2xl shadow-2xl p-8 md:p-10 text-center z-10 border-2 border-[#d2b48c] relative">
-          <div className="absolute top-2 right-2 text-[#d2b48c] text-[10px] tracking-widest">№ 0143</div>
-          <div className="text-5xl md:text-6xl mb-6 grayscale opacity-80">✉</div>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#3d2b1f] mb-2 uppercase tracking-widest">Kalliana</h1>
-          <p className="text-[#8b4513] mb-8 md:mb-10 italic font-typewriter text-xs md:text-sm">A private digital sanctuary.</p>
+        <div className="max-w-md w-full paper-sheet rounded shadow-2xl p-10 md:p-12 text-center z-10 border-t-8 border-[#8b4513] animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="text-4xl mb-6 grayscale opacity-60">✒️</div>
+          <h1 className="font-elegant text-5xl text-[#3d2b1f] mb-2">Kalliana</h1>
+          <p className="text-[#8b4513] mb-10 italic font-typewriter text-xs uppercase tracking-widest">A Private Correspondence</p>
           <div className="space-y-6">
             <input
               type="password"
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value)}
               placeholder="The Heart's Key..."
-              className="w-full px-4 py-3 bg-[#f2e8cf] rounded-md border border-[#d2b48c] focus:outline-none focus:ring-1 focus:ring-[#8b4513] text-center font-typewriter text-base"
+              className="w-full px-4 py-3 bg-[#f2e8cf]/30 rounded-none border-b-2 border-[#d2b48c] focus:outline-none focus:border-[#8b4513] text-center font-typewriter text-base placeholder:opacity-50"
               onKeyPress={(e) => e.key === 'Enter' && handleUnlock()}
             />
             <button
               onClick={handleUnlock}
-              className="w-full btn-vintage font-bold py-3 rounded-md shadow-md active:scale-95 uppercase tracking-widest text-xs"
+              className="w-full btn-vintage font-bold py-3 uppercase tracking-[0.2em] text-xs shadow-md"
             >
-              Unlock the Heart
+              Open Archives
             </button>
           </div>
         </div>
@@ -266,267 +277,288 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pb-20 relative px-4">
+    <div className="min-h-screen pb-20 relative px-4 pt-10">
       <BackgroundDecor />
 
-      {/* Toast Notification */}
+      {/* Connection status stickers */}
+      <div className="fixed top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none">
+          <div className={`px-3 py-1 text-[8px] font-bold uppercase tracking-widest rounded shadow-sm border ${isDbConnected ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'} transition-all`}>
+            {isDbConnected ? 'Archives Sync: OK' : 'Archives Sync: Offline'}
+          </div>
+          {isSaving && (
+            <div className="px-3 py-1 bg-[#8b4513] text-[#f2e8cf] text-[8px] font-bold uppercase tracking-widest rounded shadow-md animate-pulse">
+              {saveStep}
+            </div>
+          )}
+      </div>
+
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-4">
-          <div className={`px-6 py-3 rounded-lg shadow-2xl border-2 font-typewriter text-xs uppercase tracking-widest flex items-center gap-3 ${
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className={`px-6 py-3 rounded-full shadow-2xl border-2 font-typewriter text-xs uppercase tracking-widest flex items-center gap-3 ${
             toast.type === 'success' ? 'bg-white border-green-600 text-green-800' :
             toast.type === 'error' ? 'bg-white border-red-600 text-red-800' :
             'bg-white border-[#8b4513] text-[#8b4513]'
           }`}>
+             <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
              {toast.message}
           </div>
         </div>
       )}
       
-      {isAuthor && <AIAssistant onSuggest={handleSuggest} />}
-
       {/* Header */}
-      <header className="pt-16 md:pt-24 pb-12 md:pb-20 text-center relative z-10">
-        <div className="absolute top-4 left-4 md:left-8 flex flex-col items-start gap-2">
-           <div className="flex items-center gap-3 bg-white/60 px-3 py-1.5 rounded-full border border-[#d2b48c]/40 backdrop-blur-sm">
-              <div className={`w-2.5 h-2.5 rounded-full ${isDbConnected === true ? 'bg-green-600 shadow-[0_0_8px_rgba(22,163,74,0.6)] animate-pulse' : isDbConnected === false ? 'bg-red-600' : 'bg-gray-400 animate-pulse'}`}></div>
-              <span className="text-[9px] font-typewriter uppercase tracking-widest text-[#8b4513] font-bold">
-                {isDbConnected === true ? 'Cloud Archive Linked' : isDbConnected === false ? 'Cloud Offline' : 'Syncing...'}
-              </span>
-           </div>
-           {lastError && isAuthor && (
-             <button 
-               onClick={() => setShowSqlGuide(!showSqlGuide)} 
-               className="text-[8px] uppercase tracking-widest text-red-700 underline font-bold bg-white/40 px-2 py-1 rounded"
-             >
-               View Diagnostic Guide
-             </button>
-           )}
-        </div>
-
-        <div className="inline-block border-y-2 border-[#d2b48c] py-4 md:py-6 px-6 md:px-12 mb-4 md:mb-6">
-          <h1 className="font-serif text-3xl md:text-6xl text-[#3d2b1f] uppercase tracking-[0.2em] md:tracking-[0.25em] font-bold">The Archives</h1>
-        </div>
-        <p className="text-[#8b4513] font-cursive text-2xl md:text-3xl mb-4">Dedicated to Kalliana</p>
-        <div className="flex justify-center gap-6 items-center">
-            <button onClick={handleLogout} className="text-[10px] text-[#d2b48c] hover:text-[#8b4513] font-typewriter uppercase tracking-widest underline decoration-dotted">Relock Archive</button>
-            {isSaving && (
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-[#8b4513] font-typewriter italic">{saveStep}</span>
-                <div className="w-1.5 h-1.5 bg-[#8b4513] rounded-full animate-bounce"></div>
-              </div>
-            )}
+      <header className="max-w-5xl mx-auto mb-16 relative z-10 text-[#f2e8cf]">
+        <div className="border-b border-[#f2e8cf]/20 pb-8 text-center">
+            <div className="flex justify-between items-end mb-4 text-[10px] font-typewriter uppercase tracking-[0.3em] opacity-60">
+                <span>VOL. I — NO. 143</span>
+                <span className="font-handwriting text-xl text-[#d2b48c] lowercase tracking-normal">for the munchie</span>
+                <span>EST. JAN 2026</span>
+            </div>
+            <h1 className="font-serif text-5xl md:text-8xl font-bold uppercase tracking-tighter mb-2">The Archives</h1>
+            <div className="h-0.5 bg-[#f2e8cf]/40 w-full mb-1"></div>
+            <div className="h-px bg-[#f2e8cf]/40 w-full"></div>
+            <div className="mt-4 flex justify-center gap-8 items-center text-[9px] uppercase tracking-widest font-bold">
+                <button onClick={handleLogout} className="hover:text-white transition-colors underline underline-offset-4 decoration-[#8b4513]">Lock Desk</button>
+                {isAuthor && (
+                  <button onClick={() => setShowDraftForm(!showDraftForm)} className="bg-[#8b4513] px-4 py-1.5 rounded-sm hover:bg-[#5d2e0a] transition-colors shadow-lg border border-[#5d2e0a]">New Dispatch</button>
+                )}
+            </div>
         </div>
       </header>
 
-      {/* SQL Diagnostic Guide */}
-      {showSqlGuide && isAuthor && (
-        <div className="max-w-2xl mx-auto mb-12 bg-white p-6 border-2 border-red-200 rounded-lg shadow-xl relative z-50">
-           <h3 className="font-serif font-bold text-red-800 mb-4 uppercase tracking-widest">Database Setup Guide</h3>
-           <p className="text-xs font-typewriter text-[#3d2b1f] mb-4">
-             If saving fails, ensure your Supabase table exists. Copy and run this in your Supabase SQL Editor:
-           </p>
-           <pre className="bg-gray-100 p-4 text-[10px] font-mono overflow-x-auto rounded border border-gray-300 select-all">
-{`CREATE TABLE letters (
-  id TEXT PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  title TEXT NOT NULL,
-  date TEXT NOT NULL,
-  content TEXT NOT NULL,
-  excerpt TEXT,
-  category TEXT DEFAULT 'Romantic',
-  reaction TEXT,
-  is_favorite BOOLEAN DEFAULT false
-);
-
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE letters;`}
-           </pre>
-           <p className="text-[9px] text-red-600 mt-4 italic">Error: {lastError}</p>
-           <button onClick={() => setShowSqlGuide(false)} className="mt-4 text-xs font-bold uppercase tracking-widest text-[#8b4513] underline">Close Guide</button>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <main className="max-w-5xl mx-auto relative z-10">
+      {/* Main Grid */}
+      <main className="max-w-6xl mx-auto relative z-10">
         
-        {isAuthor && (
-          <div className="mb-12 md:mb-20">
-             <button 
-               onClick={() => setShowDraftForm(!showDraftForm)}
-               disabled={isSaving}
-               className={`w-full py-6 md:py-8 bg-white/40 border-2 border-dashed border-[#d2b48c] rounded-xl text-[#8b4513] hover:text-[#3d2b1f] hover:border-[#8b4513] transition-all flex items-center justify-center gap-4 md:gap-6 group font-typewriter shadow-inner ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-             >
-               <span className="text-2xl md:text-3xl grayscale group-hover:grayscale-0 transition-all transform group-hover:scale-110">✒️</span>
-               <span className="text-sm md:text-lg tracking-widest uppercase">
-                 {isSaving ? saveStep : "Draft a New Dispatch..."}
-               </span>
-             </button>
-             
-             {showDraftForm && (
-               <div className="mt-6 md:mt-8 bg-white rounded-xl shadow-2xl p-6 md:p-10 border-2 border-[#d2b48c] animate-in fade-in zoom-in duration-500 relative overflow-hidden">
-                 {isSaving && <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-xl font-serif text-xl text-[#8b4513] animate-pulse italic">{saveStep}</div>}
-                 <div className="mb-6 md:mb-8">
-                   <label className="block text-[10px] md:text-xs uppercase font-bold text-[#8b4513] mb-2 md:mb-3 font-typewriter tracking-widest underline">Subject of the Heart</label>
-                   <input
-                     type="text"
-                     value={newLetterTitle}
-                     disabled={isSaving}
-                     onChange={(e) => setNewLetterTitle(e.target.value)}
-                     className="w-full px-2 py-3 bg-gray-50/30 border-b border-[#d2b48c] focus:outline-none focus:border-[#8b4513] font-serif text-[#3d2b1f] text-2xl"
-                     placeholder="Title..."
-                   />
-                 </div>
-                 <div>
-                   <label className="block text-[10px] md:text-xs uppercase font-bold text-[#8b4513] mb-2 md:mb-3 font-typewriter tracking-widest underline">The Correspondence</label>
-                   <textarea
-                     value={newLetterContent}
-                     disabled={isSaving}
-                     onChange={(e) => setNewLetterContent(e.target.value)}
-                     className="w-full h-72 md:h-96 p-4 md:p-8 rounded-lg bg-gray-50/30 border border-[#d2b48c] focus:outline-none focus:ring-1 focus:ring-[#8b4513] font-typewriter text-[#3d2b1f] resize-none leading-loose text-lg"
-                     placeholder="Write your soul into words..."
-                   />
-                 </div>
-                 <div className="mt-6 md:mt-10 flex justify-end gap-4 md:gap-8">
-                   <button onClick={() => setShowDraftForm(false)} className="px-4 py-2 text-[#8b4513] hover:text-[#3d2b1f] font-typewriter uppercase tracking-widest text-[10px]">Discard</button>
-                   <button 
-                     onClick={saveDraft} 
-                     disabled={isSaving}
-                     className="btn-vintage px-8 md:px-16 py-3 rounded-md font-bold shadow-xl uppercase tracking-widest text-[10px] transform hover:scale-105 active:scale-95 disabled:opacity-50"
-                   >
-                     {isSaving ? "Sealing..." : "Seal and File Away"}
-                   </button>
-                 </div>
-               </div>
-             )}
+        {/* Write View */}
+        {showDraftForm && isAuthor && (
+          <div className="mb-20 animate-in fade-in zoom-in duration-500">
+             <div className="paper-sheet p-8 md:p-16 max-w-3xl mx-auto rounded-sm border-t-[12px] border-[#8b4513] shadow-inner">
+                <div className="flex flex-col md:flex-row gap-6 mb-8">
+                  <div className="flex-1">
+                    <label className="text-[10px] uppercase font-bold text-[#8b4513] block mb-2 font-typewriter tracking-widest">Subject</label>
+                    <input
+                      type="text"
+                      value={newLetterTitle}
+                      onChange={(e) => setNewLetterTitle(e.target.value)}
+                      className="w-full bg-transparent border-b border-[#d2b48c] py-2 focus:outline-none focus:border-[#8b4513] font-serif text-2xl text-[#3d2b1f]"
+                      placeholder="Title..."
+                    />
+                  </div>
+                  <div className="w-full md:w-48">
+                    <label className="text-[10px] uppercase font-bold text-[#8b4513] block mb-2 font-typewriter tracking-widest">Category</label>
+                    <input
+                      type="text"
+                      value={newLetterCategory}
+                      onChange={(e) => setNewLetterCategory(e.target.value)}
+                      className="w-full bg-transparent border-b border-[#d2b48c] py-2 focus:outline-none focus:border-[#8b4513] font-serif text-2xl text-[#3d2b1f]"
+                      placeholder="Theme..."
+                    />
+                  </div>
+                </div>
+
+                <div className="relative mb-10">
+                  <label className="text-[10px] uppercase font-bold text-[#8b4513] block mb-4 font-typewriter tracking-widest">Correspondence</label>
+                  <textarea
+                    value={newLetterContent}
+                    onChange={(e) => setNewLetterContent(e.target.value)}
+                    className="w-full h-80 bg-transparent focus:outline-none font-typewriter text-[#3d2b1f] resize-none leading-relaxed text-lg"
+                    placeholder="Dearest Kalliana..."
+                  />
+                  <div className="h-px bg-gradient-to-r from-transparent via-[#d2b48c] to-transparent mt-4"></div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div className="font-handwriting text-2xl text-[#8b4513]">Always, Moshi</div>
+                  <div className="flex gap-4">
+                    <button onClick={() => setShowDraftForm(false)} className="text-[10px] font-bold uppercase tracking-widest text-[#8b4513]">Cancel</button>
+                    <button 
+                        onClick={saveDraft}
+                        disabled={isSaving}
+                        className="btn-vintage px-10 py-3 text-xs font-bold uppercase tracking-widest disabled:opacity-50"
+                    >
+                        {isSaving ? 'Sealing...' : 'Seal Dispatch'}
+                    </button>
+                  </div>
+                </div>
+             </div>
           </div>
         )}
 
-        {/* Letters Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          {letters.map((letter) => (
-            <div
-              key={letter.id}
-              onClick={() => {
-                setSelectedLetter(letter);
-                setCurrentReaction(letter.reaction || '');
-              }}
-              className="bg-white rounded-sm p-8 md:p-12 shadow-md hover:shadow-2xl transition-all cursor-pointer border border-[#d2b48c] hover:-translate-y-1 group relative overflow-hidden"
-            >
-              {(letter.is_favorite || letter.category === 'Romantic') && (
-                <div className="absolute top-0 right-8 md:right-12 w-8 h-12 bg-[#8b4513] shadow-lg z-20 flex flex-col items-center pt-1 border-x border-[#5d2e0a] after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-white after:[clip-path:polygon(0%_100%,50%_0%,100%_100%)]">
-                   <span className="text-white text-[8px] animate-pulse">❤</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-start mb-6">
-                <span className="text-[10px] font-bold border-b-2 border-[#8b4513] px-1 text-[#8b4513] uppercase tracking-widest">{letter.category || 'ROMANTIC'}</span>
-                <span className="text-[10px] text-[#d2b48c] font-typewriter italic">{letter.date}</span>
-              </div>
-              <h3 className="font-serif text-2xl md:text-3xl font-bold text-[#3d2b1f] mb-4 group-hover:text-[#8b4513] transition-colors uppercase leading-tight">{letter.title}</h3>
-              <p className="text-[#3d2b1f]/80 text-sm md:text-base font-typewriter line-clamp-3 leading-relaxed italic">{letter.excerpt}</p>
-              
-              {letter.reaction && (
-                <div className="mt-6 pt-4 border-t border-[#d2b48c]/40 text-[10px] text-[#8b4513] font-typewriter italic">
-                  "{letter.reaction}"
-                </div>
-              )}
+        {/* List View */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-start">
+          {letters.length === 0 && !isLoading && (
+            <div className="col-span-full text-center py-20 text-[#f2e8cf]/40 italic font-typewriter">
+                The archives are currently empty.
             </div>
-          ))}
+          )}
+          {letters.map((letter, index) => {
+            const rotation = (index % 3 === 0) ? '-1deg' : (index % 3 === 1) ? '1deg' : '0.5deg';
+            const cardStyle = (index % 4 === 0) ? 'paper-stack' : (index % 4 === 1) ? 'postcard' : 'paper-sheet';
+            
+            return (
+              <div
+                key={letter.id}
+                onClick={() => {
+                  setSelectedLetter(letter);
+                  setCurrentReaction(letter.reaction || '');
+                }}
+                className={`${cardStyle} p-6 md:p-8 cursor-pointer hover:-translate-y-2 hover:rotate-0 transition-all duration-300 group`}
+                style={{ transform: `rotate(${rotation})` }}
+              >
+                {letter.is_favorite && (
+                    <div className="absolute -top-3 -left-3 text-red-800 text-xl drop-shadow-md z-20">📌</div>
+                )}
+                
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-[8px] font-bold border-b border-[#8b4513] text-[#8b4513] uppercase tracking-widest">{letter.category || 'Romantic'}</span>
+                  <span className="text-[9px] text-[#8b4513]/60 font-typewriter italic">{letter.date}</span>
+                </div>
+
+                <h3 className="font-serif text-xl font-bold text-[#3d2b1f] mb-3 group-hover:text-[#8b4513] transition-colors uppercase leading-tight">{letter.title}</h3>
+                <p className="text-[#3d2b1f]/70 text-[13px] font-typewriter line-clamp-4 leading-relaxed italic border-l-2 border-[#d2b48c]/30 pl-3">
+                  {letter.excerpt}
+                </p>
+                
+                <div className="mt-6 flex justify-between items-center opacity-40 group-hover:opacity-100 transition-opacity">
+                    <span className="font-elegant text-lg text-[#8b4513]">Moshi</span>
+                    {letter.reaction && <span className="text-xs">💌</span>}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </main>
 
-      {/* Letter Viewer Modal */}
+      {/* Detail View Modal */}
       {selectedLetter && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-12 lg:p-20">
-          <div className="absolute inset-0 bg-[#3d2b1f]/90 backdrop-blur-sm" onClick={() => setSelectedLetter(null)}></div>
-          <div className="relative w-full max-w-5xl bg-[#fdf5e6] rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[95vh] border-4 border-double border-[#d2b48c]">
-            <div className="p-6 border-b border-[#d2b48c] flex justify-between items-center bg-white relative">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-4">
-                  <h2 className="font-serif text-xl md:text-3xl font-bold text-[#3d2b1f] uppercase tracking-widest">{selectedLetter.title}</h2>
-                  {isAuthor && (
-                    <button 
-                      onClick={() => toggleFavorite(selectedLetter.id, !!selectedLetter.is_favorite)}
-                      className={`text-xl transition-all transform hover:scale-125 ${selectedLetter.is_favorite ? 'text-red-700' : 'text-[#d2b48c] grayscale opacity-50'}`}
-                    >
-                      ❤
-                    </button>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-[10px] text-[#d2b48c] italic font-typewriter">{selectedLetter.date}</span>
-                </div>
-              </div>
-              <button onClick={() => setSelectedLetter(null)} className="p-2 hover:bg-gray-100 rounded-full text-[#8b4513]">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+        <div className="fixed inset-0 z-[100] bg-[#1a110a]/95 backdrop-blur-md overflow-y-auto overflow-x-hidden flex flex-col p-4 md:p-10 lg:p-16">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setSelectedLetter(null)}></div>
+          
+          <div className="relative w-full max-w-4xl mx-auto my-auto bg-[#fdf5e6] rounded-sm shadow-2xl border-[1px] border-[#d2b48c] paper-sheet flex flex-col z-10 animate-in zoom-in duration-300">
             
-            <div className="flex-1 overflow-y-auto p-6 md:p-20 lg:p-32 letter-paper relative">
-               <div className="max-w-2xl mx-auto">
-                 <div className="mb-10 text-[#8b4513] font-cursive text-3xl">Dearest Kalliana,</div>
-                 <div className="space-y-8">
-                   {selectedLetter.content.split('\n\n').map((para, i) => (
-                     <p key={i} className="font-typewriter text-[#3d2b1f] text-base md:text-xl leading-relaxed first-letter:text-4xl first-letter:font-serif first-letter:text-[#8b4513] first-letter:mr-2 first-letter:float-left">
-                       {para}
-                     </p>
-                   ))}
-                 </div>
-                 <div className="mt-20 pt-10 border-t-2 border-[#d2b48c]/50">
-                   <p className="font-cursive text-4xl text-[#8b4513]">Always yours,</p>
-                   <p className="font-serif font-bold text-xl text-[#3d2b1f] uppercase mt-4 tracking-widest">Moshi</p>
-                 </div>
+            {/* Modal Header Redesign */}
+            <div className="p-4 md:p-6 border-b border-[#d2b48c]/30 flex justify-between items-center bg-[#fdf5e6]/50">
+                <button 
+                  onClick={() => setSelectedLetter(null)} 
+                  className="btn-paper-tab flex items-center gap-3"
+                >
+                    <span className="opacity-70">&larr;</span> TUCK AWAY
+                </button>
 
-                 {/* Reaction Section */}
-                 <div className="mt-20 p-6 bg-white/50 border border-[#d2b48c]/30 rounded shadow-inner">
-                    <h4 className="font-serif text-[10px] font-bold text-[#8b4513] uppercase tracking-[0.3em] mb-4 text-center">Your Reflection</h4>
-                    {isRecipient ? (
-                      <div className="flex flex-col gap-4">
-                        <textarea
-                          value={currentReaction}
-                          disabled={isSaving}
-                          onChange={(e) => setCurrentReaction(e.target.value)}
-                          placeholder="How did these words find you?"
-                          className="w-full p-4 bg-transparent border-2 border-[#d2b48c]/40 rounded font-typewriter text-sm h-32 italic focus:outline-none focus:border-[#8b4513]"
-                        />
-                        <button 
-                          onClick={() => saveReaction(selectedLetter.id)}
-                          disabled={isSaving}
-                          className="self-center px-8 py-2 bg-[#8b4513] text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-[#5d2e0a]"
-                        >
-                          Seal Reflection
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center italic">
-                         <p className="font-typewriter text-[#3d2b1f] text-sm">
-                           {selectedLetter.reaction ? `"${selectedLetter.reaction}"` : "Silence... awaiting a heart's reflection."}
-                         </p>
-                      </div>
-                    )}
-                 </div>
+                <div className="text-[#8b4513]/30 font-typewriter uppercase text-[9px] tracking-[0.4em] hidden sm:block">
+                    {selectedLetter.category} — {selectedLetter.date}
+                </div>
 
-                 {isAuthor && (
-                   <div className="mt-12 flex justify-center">
-                      <button 
-                        onClick={() => handleDeleteLetter(selectedLetter.id)}
-                        disabled={isSaving}
-                        className="text-[10px] text-red-700/60 hover:text-red-700 font-bold font-typewriter uppercase tracking-widest flex items-center gap-2"
-                      >
-                         Strike from Record
-                      </button>
+                {isAuthor && (
+                    <button 
+                        onClick={() => setShowBurnConfirm(!showBurnConfirm)}
+                        className={`text-[9px] uppercase tracking-widest font-bold px-4 py-2 border border-transparent transition-all ${showBurnConfirm ? 'bg-red-900 text-white shadow-inner' : 'text-red-900/40 hover:text-red-900 hover:border-red-900/20'}`}
+                    >
+                        {showBurnConfirm ? 'WAIT...' : 'BURN'}
+                    </button>
+                )}
+            </div>
+
+            {/* Content Container */}
+            <div className="p-10 md:p-20 lg:p-24 font-typewriter text-[#3d2b1f] relative min-h-[60vh]">
+                
+                {/* Burn Confirmation Overlay */}
+                {showBurnConfirm && (
+                   <div className="absolute inset-0 z-50 flex items-center justify-center p-10 text-center bg-[#fdf5e6]/90 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+                      <div className="max-w-sm">
+                         <div className="text-4xl mb-6 grayscale">🔥</div>
+                         <h4 className="font-serif text-2xl text-red-900 uppercase tracking-widest mb-4">Strike from Record?</h4>
+                         <p className="text-xs text-[#3d2b1f]/70 leading-relaxed mb-10 italic">This manuscript will be lost to time. You cannot undo this act of erasure.</p>
+                         <div className="flex gap-4 justify-center">
+                            <button onClick={() => setShowBurnConfirm(false)} className="px-6 py-2 border border-[#d2b48c] text-[10px] uppercase font-bold tracking-widest hover:bg-[#efe6d5] transition-colors">Relent</button>
+                            <button onClick={() => handleDeleteLetter(selectedLetter.id)} className="px-6 py-2 bg-red-900 text-white text-[10px] uppercase font-bold tracking-widest hover:bg-black transition-colors shadow-lg">Incinerate</button>
+                         </div>
+                      </div>
                    </div>
-                 )}
-               </div>
+                )}
+
+                <div className="max-w-2xl mx-auto">
+                    <div className="mb-16">
+                        <div className="font-handwriting text-3xl text-[#8b4513] mb-2">Dearest Munchie,</div>
+                        <div className="h-px w-20 bg-[#8b4513]/20"></div>
+                    </div>
+
+                    <div className="text-xl md:text-2xl leading-[1.9] space-y-10 whitespace-pre-wrap">
+                        {selectedLetter.content}
+                    </div>
+
+                    {/* Signature and Seal */}
+                    <div className="mt-20 flex flex-col items-end relative">
+                        <div className="font-elegant text-5xl text-[#8b4513] mb-4">Always yours,</div>
+                        <div className="font-serif font-bold uppercase tracking-[0.5em] text-sm mb-12">Moshi</div>
+                        
+                        <div 
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(selectedLetter.id, !!selectedLetter.is_favorite); }}
+                          className={`wax-seal select-none hover:scale-110 transition-transform cursor-pointer absolute -bottom-4 right-0 ${selectedLetter.is_favorite ? 'shadow-[0_0_20px_rgba(139,0,0,0.4)] scale-110' : 'opacity-80'}`}
+                          style={{ backgroundColor: selectedLetter.is_favorite ? '#8b0000' : '#4d3b2e' }}
+                          title={selectedLetter.is_favorite ? "Unpin Memory" : "Pin Memory"}
+                        >
+                          <span className="text-xs">{selectedLetter.is_favorite ? '❤' : 'M'}</span>
+                        </div>
+                    </div>
+
+                    {/* Reflection Section */}
+                    <div className="mt-32 pt-16 border-t border-[#d2b48c]/50">
+                        <h4 className="font-serif text-[11px] font-bold text-[#8b4513] uppercase tracking-[0.4em] mb-8 text-center">A Heart's Reflection</h4>
+                        {isRecipient ? (
+                          <div className="bg-[#f2e8cf]/20 p-8 rounded-sm border border-dashed border-[#d2b48c] shadow-inner">
+                            <textarea
+                              value={currentReaction}
+                              onChange={(e) => setCurrentReaction(e.target.value)}
+                              placeholder="Whisper back to the archive..."
+                              className="w-full bg-transparent border-none focus:outline-none h-24 italic text-sm font-typewriter resize-none leading-relaxed"
+                            />
+                            <div className="flex justify-end mt-4">
+                                <button 
+                                  onClick={() => saveReaction(selectedLetter.id)}
+                                  disabled={isSaving}
+                                  className="btn-vintage px-8 py-2.5 text-[10px] uppercase font-bold tracking-widest"
+                                >
+                                  {isSaving ? 'Sealing...' : 'Seal Reflection'}
+                                </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center italic px-10">
+                             <p className="text-sm opacity-60 leading-relaxed font-typewriter">
+                               {selectedLetter.reaction ? `"${selectedLetter.reaction}"` : "The archive is silent... awaiting a reflection."}
+                             </p>
+                          </div>
+                        )}
+                    </div>
+                </div>
             </div>
           </div>
+          <div className="h-20 w-full shrink-0"></div>
         </div>
       )}
 
-      <footer className="mt-24 pt-12 pb-20 text-center border-t border-[#d2b48c]/20 relative z-10">
-        <p className="text-[#d2b48c] font-typewriter uppercase tracking-[0.4em] text-[9px]">A Secret Collection — Est. 2023</p>
+      {/* Diagnostic Fix */}
+      {showSqlGuide && isAuthor && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80">
+            <div className="relative bg-white p-8 max-w-xl w-full border-t-8 border-red-800 shadow-2xl rounded-sm">
+               <h3 className="font-serif text-xl font-bold mb-4">Fix Archive Schema</h3>
+               <p className="text-xs mb-4">Run this in your Supabase SQL Editor:</p>
+               <pre className="bg-gray-100 p-4 text-[10px] font-mono rounded overflow-x-auto select-all mb-6">
+{`ALTER TABLE letters ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN DEFAULT false;
+ALTER TABLE letters ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Romantic';
+ALTER TABLE letters ADD COLUMN IF NOT EXISTS reaction TEXT;`}
+               </pre>
+               <div className="flex justify-end gap-4">
+                    <button onClick={() => setShowSqlGuide(false)} className="text-xs font-bold uppercase underline">Close</button>
+                    <button onClick={fetchLetters} className="bg-red-800 text-white px-6 py-2 text-xs font-bold uppercase rounded">Reload</button>
+               </div>
+            </div>
+        </div>
+      )}
+
+      <footer className="mt-32 pt-16 pb-20 text-center opacity-30 text-[#f2e8cf] relative z-10">
+        <div className="w-16 h-px bg-current mx-auto mb-4"></div>
+        <p className="font-typewriter uppercase tracking-[0.5em] text-[8px]">Private Collection — № 0143 — EST. JAN 2026</p>
       </footer>
     </div>
   );

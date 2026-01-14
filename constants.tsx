@@ -5,7 +5,7 @@ export const INITIAL_LETTERS: Letter[] = [
   {
     id: '1',
     title: 'The Unspoken Shift',
-    date: 'October 24, 2023',
+    date: 'January 24, 2026',
     category: 'Thoughtful',
     excerpt: 'Alam mo, hindi ko talaga laging pinapakita, pero I feel it na there’s a real change...',
     content: `Alam mo, hindi ko talaga laging pinapakita, pero I feel it na there’s a real change ever since dumating ka sa life ko. Like, minsan I catch myself smiling sa random things na naaalala ko sayo, or yung mga jokes mo na nakakatuwa kahit simple lang. Ramdam ko lang talaga na may shift sa sakin dahil sa’yo.
@@ -22,7 +22,7 @@ So yeah… this is me being straight up, a bit playful, a bit vulnerable, but mo
   {
     id: '2',
     title: 'A Glimpse of Peace',
-    date: 'November 12, 2023',
+    date: 'January 12, 2026',
     category: 'Romantic',
     excerpt: 'Thinking about the way the light hits your face when you laugh...',
     content: `I was just sitting here thinking about that time we were just staring at the sky. It's funny how we don't even have to say anything for me to feel completely at peace. You have this way of making the world feel quiet, even when it's noisy as hell outside.
@@ -31,11 +31,4 @@ I know I don't say 'I love you' in the most grand ways, but every time I check i
 
 Hope your day is as bright as your smile. (Kahit minsan pabebe ka, cute ka pa rin.)`
   }
-];
-
-export const ROMANTIC_PROMPTS = [
-  "A short, playful note about how her laugh makes my day.",
-  "A thoughtful letter thanking her for being in my life.",
-  "A letter about a quiet memory where we were just being 'chill'.",
-  "A vulnerable message about how much she affects me daily."
 ];

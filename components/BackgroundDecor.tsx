@@ -2,37 +2,40 @@
 import React, { useEffect, useState } from 'react';
 
 const BackgroundDecor: React.FC = () => {
-  const [hearts, setHearts] = useState<{ id: number; left: number; size: number; duration: number; delay: number }[]>([]);
+  const [particles, setParticles] = useState<{ id: number; left: number; size: number; duration: number; delay: number; char: string }[]>([]);
 
   useEffect(() => {
-    const newHearts = Array.from({ length: 12 }).map((_, i) => ({
+    const chars = ['❤', '·', '✧', '•', '❣'];
+    const newParticles = Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       left: Math.random() * 100,
-      size: Math.random() * (20 - 10) + 10,
-      duration: Math.random() * (25 - 15) + 15,
-      delay: Math.random() * 10
+      size: Math.random() * (18 - 6) + 6,
+      duration: Math.random() * (30 - 15) + 15,
+      delay: Math.random() * 10,
+      char: chars[Math.floor(Math.random() * chars.length)]
     }));
-    setHearts(newHearts);
+    setParticles(newParticles);
   }, []);
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {hearts.map((heart) => (
+      {particles.map((p) => (
         <div
-          key={heart.id}
-          className="heart-particle opacity-0"
+          key={p.id}
+          className="dust-particle opacity-0"
           style={{
-            left: `${heart.left}%`,
-            fontSize: `${heart.size}px`,
-            animationDuration: `${heart.duration}s`,
-            animationDelay: `${heart.delay}s`,
+            left: `${p.left}%`,
+            fontSize: `${p.size}px`,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
             bottom: '-50px',
-            color: '#a0522d' // Sienna brown instead of bright red
           }}
         >
-          ❤
+          {p.char}
         </div>
       ))}
+      {/* Vignette effect */}
+      <div className="absolute inset-0 bg-radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%) pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]"></div>
     </div>
   );
 };
