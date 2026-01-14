@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Letter, UserRole } from './types';
@@ -220,7 +219,7 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-[#f2e8cf] relative">
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-[#f2e8cf] relative bg-[#2c1e14]">
          <BackgroundDecor />
          <div className="z-10 relative">
             <div className="w-12 h-12 border-2 border-[#f2e8cf]/20 border-t-[#8b4513] rounded-full animate-spin mb-6 mx-auto"></div>
@@ -236,7 +235,7 @@ const App: React.FC = () => {
 
   if (!userRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-[#2c1e14]">
         <BackgroundDecor />
         <div className="max-w-2xl w-full flex flex-col items-center relative z-20">
           
